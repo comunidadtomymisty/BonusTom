@@ -1,0 +1,107 @@
+/* TOM SLOT - Comunidad Tom y Misty */
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;}
+body{font-family:Arial,Helvetica,sans-serif;color:white;background:radial-gradient(circle at 50% 35%,#512065,#260d38 58%,#13071e)}
+.pagina{display:flex;justify-content:center;align-items:flex-start;width:100%;min-height:100vh;margin:auto;padding:8px 0 20px}
+.maquina{position:relative;width:min(96vw,900px,calc(92vh * 1312 / 1199));aspect-ratio:1312/1199;container-type:inline-size;isolation:isolate}
+.marco{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill;z-index:10;pointer-events:none}
+.aviso-marco{position:absolute;top:8%;left:10%;width:80%;padding:10px;background:#722;color:#fff;text-align:center;font-size:clamp(12px,2.5vw,20px);z-index:12}
+/* Coordenadas tomadas del marco SlotCasino original */
+.pantalla{position:absolute;left:19%;top:42%;width:62%;height:39%;margin:0;padding:0;border:0;background:#241034;overflow:hidden;z-index:2}
+.carriles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8%;padding:.8%;border-radius:8px;background:linear-gradient(180deg,#a86e25,#ffe7a5 50%,#a36b23);box-shadow:0 0 10px #ffc64c}
+.carril{position:relative;min-width:0;height:100%;overflow:hidden;border:2px solid #7c4288;border-radius:7px;background:linear-gradient(180deg,#baa5c6 0%,#f6f0ff 25%,#fff 50%,#f6f0ff 75%,#aa93b7)}
+.carril:after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(180deg,#35133930,transparent 20%,transparent 80%,#35133930)}
+.tira{position:absolute;top:0;left:0;width:100%;will-change:transform}
+.celda{display:flex;align-items:center;justify-content:center;width:100%;height:13cqw;overflow:hidden}
+.celda img{display:block;width:100%;height:100%;padding:2%;object-fit:contain;filter:drop-shadow(0 2px 2px #0003)}
+.simbolo-faltante{font-size:clamp(10px,2.1cqw,20px);font-weight:900;color:#742a75;text-align:center}
+.linea-premio{position:absolute;top:50%;left:0;right:0;height:2px;transform:translateY(-50%);z-index:8;background:#ffdb59;box-shadow:0 0 4px #fff5b5,0 0 9px #ffc63b;pointer-events:none}
+.spin{position:absolute;left:50%;top:87%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;width:11cqw;height:11cqw;margin:0;padding:0;z-index:100;border:.55cqw solid #fff0a2;border-radius:50%;background:radial-gradient(circle at 32% 25%,#fff9cf 0%,#ffe27d 34%,#ffb83c 66%,#ae5516 100%);color:#692044;font-size:2.3cqw;font-weight:900;letter-spacing:.04em;text-shadow:0 1px 1px #fff4a8;box-shadow:inset 0 .35cqw .6cqw #fff9,inset 0 -.45cqw .7cqw #7e3c20,0 .35cqw 0 #7d390e,0 0 1.4cqw #ffd75e;cursor:pointer;user-select:none;touch-action:manipulation}
+.spin:hover{filter:brightness(1.09)}
+.spin:active{transform:translate(-50%,-50%) scale(.96)}
+.spin:disabled{opacity:.65;cursor:wait}
+.estado-juego{position:absolute;left:20%;top:95%;width:60%;font-size:clamp(10px,2cqw,18px);font-weight:900;text-align:center;color:#ffe5a2;text-shadow:0 2px 6px #000;z-index:11}
+.win-overlay[hidden]{display:none!important}
+.win-overlay{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle,#76258bf5,#13051bf9);overflow:hidden}
+.win-contenido{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;animation:aparecer .4s ease-out both}
+.win-contenido img{display:block;max-width:min(78vw,480px);max-height:52vh;object-fit:contain;filter:drop-shadow(0 0 22px #ffd84c)}
+.win-contenido strong{font-size:clamp(28px,7vw,64px);font-weight:900;color:#ffe56c;text-shadow:0 3px 0 #9c4219,0 0 20px #ff9c21}
+.win-contenido p{margin:0;font-size:clamp(17px,4vw,26px);font-weight:900;color:white}
+.win-contenido button{margin-top:8px;padding:13px 26px;border:3px solid #fff0a2;border-radius:30px;background:linear-gradient(#ffe999,#ffb83c);color:#692044;font-size:16px;font-weight:900;box-shadow:0 4px 18px #ffdb5980;cursor:pointer}
+.confeti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.confeti i{position:absolute;top:-10%;left:var(--x);width:9px;height:17px;background:hsl(var(--tono),95%,60%);animation:caer var(--dur) ease-in var(--delay) both}
+@keyframes caer{0%{opacity:0;transform:translateY(-20px) rotate(0)}10%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateY(115vh) rotate(850deg)}}
+@keyframes aparecer{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
+@media(max-width:550px){.pagina{padding-top:12px}.maquina{width:98vw}.spin{width:12cqw;height:12cqw;font-size:2.5cqw}}
+
+/* Efectos de velocidad y suspenso en los tres rodillos */
+.carril.girando .celda img{filter:blur(1.5px) drop-shadow(0 2px 2px #0003)}
+.carril.detenido{animation:destello .42s ease-out}
+@keyframes destello{0%{box-shadow:inset 0 0 0 #fff0}45%{box-shadow:inset 0 0 24px #ffe57dcc}100%{box-shadow:inset 0 0 0 #fff0}}
+
+/* Botón personalizado: imagen transparente en Inicio/Spin.png */
+.spin{border:0;background:transparent;box-shadow:none;width:13cqw;height:13cqw;padding:0;overflow:visible;filter:drop-shadow(0 0 8px #ffc94b)}
+.spin img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+.spin:hover{filter:brightness(1.12) drop-shadow(0 0 12px #ffd46d)}
+.spin:disabled{filter:grayscale(.4);opacity:.75}
+.spin.spin-respaldo{border:.55cqw solid #fff0a2;border-radius:50%;background:radial-gradient(circle,#ffe27d,#ffb83c 66%,#ae5516);color:#692044}
+.spin.spin-respaldo::after{content:"SPIN";font-size:2.3cqw;font-weight:900}
+
+
+/* DISEÑO PC: SLOT ENTERO VISIBLE, PANELES GRANDES AL BORDE DERECHO */
+html,body{width:100%;margin:0}
+.pagina{height:100dvh;min-height:0;overflow:hidden;padding:8px 0;display:block;position:relative}
+.zona-juego{width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center}
+.zona-juego .maquina{
+  position:relative;flex:none;min-width:0;
+  width:min(62vw, calc((100dvh - 26px) * 1312 / 1199), 860px);
+  max-width:none;aspect-ratio:1312/1199;
+}
+.paneles-derecha{
+  position:absolute;right:clamp(5px,0.8vw,16px);top:50%;
+  transform:translateY(-50%);width:clamp(190px,20vw,300px);
+  height:calc(100% - 10px);display:flex;flex-direction:column;
+  align-items:stretch;justify-content:center;gap:clamp(4px,1vh,12px);
+}
+.paneles-derecha aside{display:flex;justify-content:flex-end;align-items:center;width:100%;min-height:0;margin:0}
+.paneles-derecha .panel-valores{flex:0 1 47%;}
+.paneles-derecha .panel-redes{flex:0 1 51%;}
+.paneles-derecha img{display:block;width:100%;height:100%;object-fit:contain;object-position:right center;filter:drop-shadow(0 5px 10px #0007)}
+.aviso-valores,.aviso-redes{font-size:13px;padding:8px;background:#622456}
+/* Botón SPIN más grande, sin quedar fuera de la máquina */
+.maquina .spin{top:90.5%;width:17cqw;height:17cqw;z-index:100}
+.maquina .estado-juego{top:96%;font-size:clamp(10px,1.8cqw,17px)}
+/* Pantallas de PC estrechas: reservar espacio para los paneles */
+@media (min-width:801px) and (max-aspect-ratio:16/10){
+ .zona-juego .maquina{transform:translateX(-5vw);width:min(60vw, calc((100dvh - 26px)*1312/1199))}
+ .paneles-derecha{width:clamp(175px,21vw,290px)}
+}
+/* Celular: máquina primero y paneles debajo, sin recortar */
+@media (max-width:800px){
+ .pagina{height:auto;min-height:100dvh;overflow:visible;padding:10px 0 24px}
+ .zona-juego{height:auto;display:flex;flex-direction:column;gap:8px}
+ .zona-juego .maquina{width:min(98vw,680px);transform:none;flex:none}
+ .paneles-derecha{position:static;transform:none;width:min(94vw,520px);height:auto;gap:10px;align-items:center}
+ .paneles-derecha .panel-valores,.paneles-derecha .panel-redes{width:100%;flex:none;justify-content:center}
+ .paneles-derecha img{width:100%;height:auto;max-height:none;object-position:center}
+ .paneles-derecha .panel-valores img{max-width:440px}
+ .paneles-derecha .panel-redes img{max-width:380px}
+ .maquina .spin{top:90.5%;width:17cqw;height:17cqw}
+}
+
+/* PANEL DE ANUNCIO A LA IZQUIERDA - PC EN UNA SOLA PANTALLA */
+@media (min-width:801px){
+  .zona-juego{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto) minmax(0,1fr);align-items:center;gap:clamp(4px,.6vw,12px);padding:0 clamp(6px,.7vw,14px)}
+  .zona-juego .maquina{grid-column:2;grid-row:1;transform:none!important;width:min(57vw,calc((100dvh - 30px)*1312/1199),860px)}
+  .panel-anuncio{grid-column:1;grid-row:1;min-width:0;max-height:calc(100dvh - 24px);display:flex;align-items:center;justify-content:flex-start}
+  .panel-anuncio img{display:block;width:100%;max-height:calc(100dvh - 24px);object-fit:contain;object-position:left center;filter:drop-shadow(0 5px 10px #0007)}
+  .paneles-derecha{grid-column:3;grid-row:1;position:static;right:auto;top:auto;transform:none;width:100%;height:calc(100dvh - 24px);min-width:0}
+  .paneles-derecha img{max-width:100%}
+}
+.aviso-anuncio{padding:8px;font-size:13px;background:#622456}
+@media(max-width:800px){
+  .panel-anuncio{order:2;width:min(94vw,520px);display:flex;justify-content:center;align-items:center}
+  .panel-anuncio img{display:block;width:100%;max-width:440px;height:auto;object-fit:contain}
+  .zona-juego .maquina{order:1}
+  .paneles-derecha{order:3}
+}

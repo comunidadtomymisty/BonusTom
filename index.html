@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TOM SLOT · Comunidad Tom y Misty</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="pagina">
+    <div class="zona-juego">
+      <aside class="panel-anuncio" aria-label="Anuncio de Comunidad Tom">
+        <img src="Inicio/Anuncio.png" alt="Anuncio" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+        <p class="aviso-anuncio" hidden>No se encontró Inicio/Anuncio.png. Revisá el nombre exacto.</p>
+      </aside>
+    <div class="maquina" aria-label="Máquina tragamonedas de Comunidad Tom y Misty">
+      <!-- El marco completo está dentro de Inicio -->
+      <img class="marco" src="Inicio/SlotCasino.png" alt="Máquina TOM SLOT" onerror="this.style.display='none';document.querySelector('.aviso-marco').hidden=false">
+      <p class="aviso-marco" hidden>No se encontró Inicio/SlotCasino.png. Revisá el nombre exacto del archivo.</p>
+      <section class="pantalla" aria-label="Tres rodillos">
+        <div class="carriles" id="carriles">
+          <div class="carril" id="carril0"><div class="tira"></div></div>
+          <div class="carril" id="carril1"><div class="tira"></div></div>
+          <div class="carril" id="carril2"><div class="tira"></div></div>
+          <div class="linea-premio" aria-hidden="true"></div>
+        </div>
+      </section>
+      <button class="spin" id="spin" type="button" aria-label="Girar tragamonedas"><img src="Inicio/Spin.png" alt="SPIN" onerror="this.style.display='none';this.parentElement.classList.add('spin-respaldo')"></button>
+      <div class="estado-juego" id="estado" aria-live="polite">¡TOCÁ SPIN!</div>
+    </div>
+      <div class="paneles-derecha">
+    <aside class="panel-valores" aria-label="Tabla de premios del slot">
+      <img src="Inicio/Valores.png" alt="Tabla de premios: Misty Grand, Tom Grand, Monedas Mega, Trébol Minor y Pescado Mini" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+      <p class="aviso-valores" hidden>No se encontró Inicio/Valores.png. Revisá que el archivo tenga ese nombre.</p>
+    </aside>
+    <aside class="panel-redes" aria-label="Nuestras redes sociales">
+      <img src="Inicio/Redes.png" alt="Nuestras redes sociales: Instagram, Facebook y Kick" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+      <p class="aviso-redes" hidden>No se encontró Inicio/Redes.png. Revisá el nombre del archivo.</p>
+    </aside>
+      </div>
+    </div>
+  </main>
+
+  <div class="win-overlay" id="victoria" hidden role="dialog" aria-modal="true" aria-labelledby="titulo-premio">
+    <div class="confeti" id="confeti" aria-hidden="true"></div>
+    <div class="win-contenido">
+      <img id="imagen-premio" src="" alt="Premio obtenido">
+      <strong id="titulo-premio">¡GANASTE!</strong>
+      <p id="nombre-premio"></p>
+      <button type="button" id="cerrar">CONTINUAR</button>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+    // La suma de las probabilidades es exactamente 100.
+    // Cambiá únicamente los nombres de archivo si tus PNG tienen otros nombres.
+    const simbolos = [
+      {nombre:'Misty',   archivo:'Slots/Misty.png',   premio:'Premios/MistyGrand.png',  categoria:'GRAND', probabilidad:10},
+      {nombre:'Tom',     archivo:'Slots/Tom.png',     premio:'Premios/TomGrand.png',    categoria:'GRAND', probabilidad:10},
+      {nombre:'Monedas', archivo:'Slots/Monedas.png', premio:'Premios/MonedaMega.png',  categoria:'MEGA',  probabilidad:20},
+      {nombre:'Trébol',  archivo:'Slots/Trebol.png',  premio:'Premios/TrebolMinor.png',categoria:'MINOR', probabilidad:25},
+      {nombre:'Pescado', archivo:'Slots/Pescado.png', premio:'Premios/PescadoMini.png', categoria:'MINI',  probabilidad:35}
+    ];
+
+    const boton = document.getElementById('spin');
+    const estado = document.getElementById('estado');
+    const overlay = document.getElementById('victoria');
+    const imagenPremio = document.getElementById('imagen-premio');
+    const nombrePremio = document.getElementById('nombre-premio');
+    const cerrar = document.getElementById('cerrar');
+    const rodillos = [...document.querySelectorAll('.carril')];
+    let girando = false;
+
+    function elegirGanador() {
+      const numero = Math.random() * 100;
+      let acumulado = 0;
+      for (const simbolo of simbolos) {
+        acumulado += simbolo.probabilidad;
+        if (numero < acumulado) return simbolo;
+      }
+      return simbolos[simbolos.length - 1];
+    }
+
+    function crearImagen(simbolo) {
+      const img = document.createElement('img');
+      img.src = simbolo.archivo;
+      img.alt = simbolo.nombre;
+      img.draggable = false;
+      img.onerror = () => {
+        // Si el archivo falta, muestra el nombre para facilitar el diagnóstico.
+        img.style.display = 'none';
+        const etiqueta = document.createElement('span');
+        etiqueta.className = 'simbolo-faltante';
+        etiqueta.textContent = simbolo.nombre;
+        img.after(etiqueta);
+      };
+      return img;
+    }
+
+    // Cada rodillo tiene una secuencia distinta y realmente aleatoria.
+    // El ganador sólo aparece al final, sin anticiparse en los rodillos.
+    function construirTira(rodillo, ganador, cantidad) {
+      const tira = rodillo.querySelector('.tira');
+      tira.getAnimations().forEach(a => a.cancel());
+      tira.replaceChildren();
+      const secuencia = [];
+      for (let i = 0; i < cantidad; i++) {
+        const anterior = secuencia[secuencia.length - 1];
+        const opciones = simbolos.filter(s => s !== anterior);
+        secuencia.push(opciones[Math.floor(Math.random() * opciones.length)]);
+      }
+      // Penúltimo símbolo distinto para generar suspenso; último ganador.
+      if (secuencia[cantidad - 1] === ganador) {
+        secuencia[cantidad - 1] = simbolos.filter(s => s !== ganador)[Math.floor(Math.random() * 4)];
+      }
+      secuencia.push(ganador);
+      // Una celda adicional permite ver el símbolo siguiente al detenerse.
+      secuencia.push(simbolos.filter(s => s !== ganador)[Math.floor(Math.random() * 4)]);
+      for (const simbolo of secuencia) {
+        const celda = document.createElement('div');
+        celda.className = 'celda';
+        celda.appendChild(crearImagen(simbolo));
+        tira.appendChild(celda);
+      }
+      return { tira, indiceGanador: cantidad };
+    }
+
+    function esperar(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    async function animarRodillo(rodillo, ganador, indice) {
+      // Cantidad de símbolos y tiempo variables: cada tirada se ve diferente.
+      const cantidad = 37 + indice * 8 + Math.floor(Math.random() * 11);
+      const {tira, indiceGanador} = construirTira(rodillo, ganador, cantidad);
+      const alto = rodillo.querySelector('.celda').getBoundingClientRect().height;
+      const centro = rodillo.getBoundingClientRect().height / 2 - alto / 2;
+      const pos = n => centro - n * alto;
+      const final = pos(indiceGanador);
+      tira.style.transform = `translateY(${pos(0)}px)`;
+      rodillo.classList.add('girando');
+
+      // Primera fase: giro rápido y uniforme, mostrando símbolos aleatorios.
+      const rapido = tira.animate([
+        {transform:`translateY(${pos(0)}px)`},
+        {transform:`translateY(${pos(indiceGanador - 8)}px)`}
+      ], {duration:1550 + indice * 290 + Math.random() * 450, easing:'linear', fill:'forwards'});
+      await rapido.finished;
+      rapido.cancel();
+      tira.style.transform = `translateY(${pos(indiceGanador - 8)}px)`;
+
+      // Segunda fase: frena gradualmente y hace un pequeño rebote al caer.
+      const freno = tira.animate([
+        {offset:0, transform:`translateY(${pos(indiceGanador - 8)}px)`, easing:'cubic-bezier(.18,.65,.28,1)'},
+        {offset:.84, transform:`translateY(${final - alto * .18}px)`, easing:'ease-out'},
+        {offset:1, transform:`translateY(${final}px)`}
+      ], {duration:1150 + indice * 320 + Math.random() * 450, fill:'forwards'});
+      await freno.finished;
+      freno.cancel();
+      tira.style.transform = `translateY(${final}px)`;
+      rodillo.classList.remove('girando');
+      rodillo.classList.add('detenido');
+    }
+
+    async function girar() {
+      if (girando) return;
+      girando = true;
+      boton.disabled = true;
+      estado.textContent = '¡GIRANDO!';
+      rodillos.forEach(r => r.classList.remove('detenido'));
+      const ganador = elegirGanador();
+      // Los tres giran simultáneamente pero con distinta velocidad y duración.
+      await Promise.all(rodillos.map((rodillo, i) => animarRodillo(rodillo, ganador, i)));
+      estado.textContent = '¡TRES IGUALES!';
+      await esperar(650);
+      imagenPremio.src = ganador.premio;
+      imagenPremio.alt = `Premio ${ganador.categoria} de ${ganador.nombre}`;
+      imagenPremio.style.display = '';
+      imagenPremio.onerror = () => {
+        imagenPremio.style.display = 'none';
+        nombrePremio.textContent += ' (Revisá la imagen en la carpeta Premios)';
+      };
+      nombrePremio.textContent = `${ganador.nombre.toUpperCase()} · ${ganador.categoria}`;
+      crearConfeti();
+      overlay.hidden = false;
+      girando = false;
+    }
+
+    function crearConfeti() {
+      const caja = document.getElementById('confeti');
+      caja.replaceChildren();
+      for (let i = 0; i < 45; i++) {
+        const papel = document.createElement('i');
+        papel.style.setProperty('--x', `${Math.random() * 100}%`);
+        papel.style.setProperty('--delay', `${Math.random() * 0.8}s`);
+        papel.style.setProperty('--dur', `${1.6 + Math.random() * 1.8}s`);
+        papel.style.setProperty('--tono', `${Math.random() * 360}`);
+        caja.appendChild(papel);
+      }
+    }
+
+    boton.addEventListener('click', girar);
+    cerrar.addEventListener('click', () => {
+      overlay.hidden = true;
+      boton.disabled = false;
+      estado.textContent = '¡TOCÁ SPIN!';
+    });
+
+    // Inicio: llenar los tres carriles y centrar los símbolos desde el primer segundo.
+    function iniciarRodillos() {
+      rodillos.forEach((rodillo, i) => {
+        const tira = rodillo.querySelector('.tira');
+        tira.replaceChildren();
+        // Seis símbolos visibles alrededor del centro, sin espacios vacíos.
+        const orden = [0,1,2,3,4,0,1,2,3];
+        orden.forEach((n, j) => {
+          const celda = document.createElement('div');
+          celda.className = 'celda';
+          celda.appendChild(crearImagen(simbolos[(n + i) % simbolos.length]));
+          tira.appendChild(celda);
+        });
+        const alto = tira.querySelector('.celda').getBoundingClientRect().height;
+        const centro = (rodillo.getBoundingClientRect().height - alto) / 2;
+        tira.style.transform = `translateY(${centro - 4 * alto}px)`;
+      });
+    }
+    iniciarRodillos();
+    window.addEventListener('resize', () => { if (!girando && overlay.hidden) iniciarRodillos(); });
+  </script>
+</body>
+</html>
